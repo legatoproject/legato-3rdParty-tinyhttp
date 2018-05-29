@@ -45,6 +45,7 @@ int http_parse_chunked(int* state, int *size, char ch)
     case 'c': case 'd': case 'e': case 'f':
     case 'A': case 'B': case 'C': case 'D':
     case 'E': case 'F': code = 3; break;
+    default: break;
     }
 
     newstate = http_chunk_state[*state * 4 + code];
@@ -72,6 +73,9 @@ int http_parse_chunked(int* state, int *size, char ch)
 
     case 0x83:
         return *size == 0;
+
+    default:
+        break;
     }
 
     return 1;

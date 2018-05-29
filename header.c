@@ -51,6 +51,7 @@ int http_parse_header_char(int* state, char ch)
     case  ' ': code = 4; break;
     case  ',': code = 5; break;
     case  ':': code = 6; break;
+    default: break;
     }
 
     newstate = http_header_state[*state * 8 + code];
@@ -66,6 +67,7 @@ int http_parse_header_char(int* state, char ch)
     case 0x84: return http_header_status_key_character;
     case 0x87: return http_header_status_value_character;
     case 0x88: return http_header_status_value_character;
+    default: break;
     }
 
     return http_header_status_continue;

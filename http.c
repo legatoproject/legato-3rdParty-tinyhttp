@@ -48,7 +48,7 @@ static void grow_scratch(struct http_roundtripper* rt, int size)
     if (nsize < size)
         nsize = size;
 
-	rt->scratch = (char*)rt->funcs.realloc_scratch(rt->opaque, rt->scratch, nsize);
+    rt->scratch = (char*)rt->funcs.realloc_scratch(rt->opaque, rt->scratch, nsize);
     rt->nscratch = nsize;
 }
 
@@ -145,10 +145,20 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
                 rt->nkey = 0;
                 rt->nvalue = 0;
                 break;
+
+                default:
+                break;
             }
 
             --size;
             ++data;
+
+            if (!size)
+            {
+                // Case of HEAD (no body content)
+                *read = 0;
+                return 0;
+            }
             break;
 
         case http_roundtripper_chunk_header:
@@ -204,6 +214,9 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
 
         case http_roundtripper_close:
         case http_roundtripper_error:
+            break;
+
+        default:
             break;
         }
 
