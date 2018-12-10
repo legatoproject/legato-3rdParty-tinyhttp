@@ -37,10 +37,10 @@ static void append_body(struct http_roundtripper* rt, const char* data, int ndat
     rt->funcs.body(rt->opaque, data, ndata);
 }
 
-static void grow_scratch(struct http_roundtripper* rt, int size)
+static int grow_scratch(struct http_roundtripper* rt, int size)
 {
     if (rt->nscratch >= size)
-        return;
+        return 0;
 
     if (size < 64)
         size = 64;
@@ -49,7 +49,11 @@ static void grow_scratch(struct http_roundtripper* rt, int size)
         nsize = size;
 
     rt->scratch = (char*)rt->funcs.realloc_scratch(rt->opaque, rt->scratch, nsize);
+    if (rt->scratch == NULL)
+        return -1;
+
     rt->nscratch = nsize;
+    return 0;
 }
 
 static int min(int a, int b)
@@ -119,15 +123,23 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
                 break;
 
             case http_header_status_key_character:
-                grow_scratch(rt, rt->nkey + 1);
-                rt->scratch[rt->nkey] = tolower(*data);
-                ++rt->nkey;
+                if (grow_scratch(rt, rt->nkey + 1) == -1) {
+                    rt->state = http_roundtripper_error;
+                }
+                else {
+                    rt->scratch[rt->nkey] = tolower(*data);
+                    ++rt->nkey;
+                }
                 break;
 
             case http_header_status_value_character:
-                grow_scratch(rt, rt->nkey + rt->nvalue + 1);
-                rt->scratch[rt->nkey+rt->nvalue] = *data;
-                ++rt->nvalue;
+                if (grow_scratch(rt, rt->nkey + rt->nvalue + 1) == -1) {
+                    rt->state = http_roundtripper_error;
+                }
+                else {
+                    rt->scratch[rt->nkey+rt->nvalue] = *data;
+                    ++rt->nvalue;
+                }
                 break;
 
             case http_header_status_store_keyvalue:
