@@ -102,7 +102,6 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
         case http_roundtripper_header:
             switch (http_parse_header_char(&rt->parsestate, *data)) {
             case http_header_status_done:
-                rt->funcs.code(rt->opaque, rt->code);
                 if (rt->parsestate != 0)
                     rt->state = http_roundtripper_error;
                 else if (rt->chunked) {
@@ -120,6 +119,13 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
 
             case http_header_status_code_character:
                 rt->code = rt->code * 10 + *data - '0';
+                break;
+
+            case http_header_status_status_character:
+                if (rt->code != 0) {
+                    rt->funcs.code(rt->opaque, rt->code);
+                    rt->code = 0;
+                }
                 break;
 
             case http_header_status_key_character:
