@@ -75,8 +75,8 @@ void http_free(struct http_roundtripper* rt);
 /**
  * Parses a block of HTTP response data. Returns zero if the parser reached the
  * end of the response, or an error was encountered. Use http_iserror to check
- * for the presence of an error. Returns non-zero if more data is required for
- * the response.
+ * for the presence of an error. Returns 2 if an HTTP_HEAD command was parsed
+ * and then returns non-zero if more data is required for the response.
  */
 int http_data(struct http_roundtripper* rt, const char* data, int size, int* read);
 

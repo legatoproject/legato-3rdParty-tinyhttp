@@ -173,9 +173,10 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
 
             if (!size)
             {
-                // Case of HEAD (no body content)
+                // Case of HEAD (no body content): specific error code is to be
+                // catched by upper layers.
                 *read = 0;
-                return 0;
+                return 2;
             }
             break;
 
