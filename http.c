@@ -102,6 +102,9 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
         case http_roundtripper_header:
             switch (http_parse_header_char(&rt->parsestate, *data)) {
             case http_header_status_done:
+#ifndef NO_SWI
+                append_body(rt, CRLF, strlen(CRLF));
+#endif
                 if (rt->parsestate != 0)
                     rt->state = http_roundtripper_error;
                 else if (rt->chunked) {

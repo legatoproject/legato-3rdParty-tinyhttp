@@ -31,6 +31,10 @@
 extern "C" {
 #endif
 
+#ifndef NO_SWI
+#define CRLF "\r\n"
+#endif
+
 /**
  * Callbacks for handling response data.
  *  realloc_scratch - reallocate memory, cannot fail. There will only
