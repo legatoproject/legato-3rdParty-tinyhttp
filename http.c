@@ -29,6 +29,10 @@
 #include <ctype.h>
 #include <string.h>
 
+#ifdef SIERRA
+#include <stdbool.h>
+#endif
+
 #include "header.h"
 #include "chunk.h"
 
@@ -96,12 +100,26 @@ void http_free(struct http_roundtripper* rt)
 
 int http_data(struct http_roundtripper* rt, const char* data, int size, int* read)
 {
+#ifdef SIERRA
+    int codeCnt = 0;
+    bool codeSent = false;
+#endif
     const int initial_size = size;
     while (size) {
         switch (rt->state) {
         case http_roundtripper_header:
             switch (http_parse_header_char(&rt->parsestate, *data)) {
             case http_header_status_done:
+#ifdef SIERRA
+                // In case of invalid status code, last checkpoint for status code transmition.
+                if (!codeSent)
+                {
+#endif
+                rt->funcs.code(rt->opaque, rt->code);
+#ifdef SIERRA
+                    codeSent = true;
+                }
+#endif
                 if (rt->parsestate != 0)
                     rt->state = http_roundtripper_error;
                 else if (rt->chunked) {
@@ -119,15 +137,27 @@ int http_data(struct http_roundtripper* rt, const char* data, int size, int* rea
 
             case http_header_status_code_character:
                 rt->code = rt->code * 10 + *data - '0';
-                break;
-
-            case http_header_status_status_character:
-                if (rt->code != 0) {
+#ifdef SIERRA
+                codeCnt++;
+                // Forward status code once three digits has been handled.
+                if (codeCnt == 3)
+                {
                     rt->funcs.code(rt->opaque, rt->code);
-                    rt->code = 0;
+                    codeSent = true;
+                }
+#endif
+                break;
+#ifdef SIERRA
+            case http_header_status_status_character:
+                // In case of status code is invalid, checkpoint for status code transmition.
+                // HTTP Reason phrase is an option field.
+                if (!codeSent)
+                {
+                    rt->funcs.code(rt->opaque, rt->code);
+                    codeSent = true;
                 }
                 break;
-
+#endif
             case http_header_status_key_character:
                 if (grow_scratch(rt, rt->nkey + 1) == -1) {
                     rt->state = http_roundtripper_error;
